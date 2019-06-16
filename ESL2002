@@ -1,0 +1,1017 @@
+#### Read in the data ####
+# Set the working directory.
+# Read in the us_elections.csv dataset to dataframe named 'election'.
+setwd("~/Desktop/ucr/data")
+election = read.csv("us_elections.csv", header=T)
+View(election)
+
+# Check if the dataset contains any NA values.
+# Which variable contains the largest number of NA's and what is the NA count?
+is.na(election$votes)
+is_na = is.na(election$votes)
+which(is_na == TRUE)
+na_id = which(is_na)
+na_id
+election$votes[na_id]
+summary(election)
+
+
+# Omit all rows containing NA values by using the na.omit() function.
+# Our election data should now have 2601 observations.
+# Using the DEFINITION OF VARIANCE and not the var() function,
+# calculate the variance of the 'median_age' variable.
+# NOTE: Using the var() function will in fact give you a different answer,
+# as it chooses to divide by n-1 rather than n.
+
+# Answer:
+election_clean <- na.omit(election)
+median_age_mean=sum(election_clean$median_age)/length(election_clean$median_age)
+median_age_mean
+
+# a. Find the mean value of the variable 'votes'. Hint: do not forget to use `na.rm` option!
+# Replace the NAs in the variable 'votes' with the median value of the variable.
+# b. Now what is the mean value of the variable 'votes'?
+
+mean_votes = mean(election$votes, 
+                    +                       na.rm = TRUE)
+mean_votes
+median_votes = median(election$votes, 
+                      +                       na.rm = TRUE)
+median_votes
+election$votes[na_id] = median_votes
+election$votes[na_id]
+
+is_na = is.na(election$votes)
+na_id = which(is_na)
+median_votes = median(election$votes, na.rm = TRUE)
+election$votes[na_id] = median_votes
+
+# Rename the column names as the following:
+# c("community_number", "community_area", "pct_house_crowded", 
+# "pct_house_below_poverty", "pct_16_unemployed", 
+# "pct_25_wo_diploma", "pct_dependent", "per_capita_meaneduc", 
+# "hardship_index").
+# Inspect the structure of the `chicago` variable.
+chicago <- setNames(chicago, c("community_number", "community_area", "pct_house_crowded", "pct_house_below_poverty", "pct_16_unemployed", "pct_25_wo_diploma", "pct_dependent", "per_capita_meaneduc", "hardship_index"))
+View(chicago)
+structure(chicago)
+
+
+# Check the covariance and correlation of 'per_capita_meaneduc' and 'pct_dependent'.
+# What are they?
+# Are they correlated and how?
+cov(chicago$per_capita_meaneduc, chicago$pct_dependent)
+# -83558.94
+cor(chicago$per_capita_meaneduc, chicago$pct_dependent)
+# -0.7548436
+
+
+# Take all variables except community_number and community_area into a new dataframe called
+# "cor_df". Use na.omit() to remove NA rows for now!
+cor_df <- chicago[,c(3:9)]
+cor_df <- na.omit(cor_df)
+
+
+# Form a corrplot with this cor_df.
+# Hint: set `method` argument to "number" to see the actual correlation coefficient and not just the color!
+# Which set of variables have highest positive correlation?
+# Our linear model is going to predict per_capita_meaneduc.
+chicago_cor = cor(cor_df)
+corrplot(chicago_cor, method = "number")
+
+
+# Create a simple linear regression model to predict the per_capita_meaneduc using
+# pct_dependent as a predictor using chicago_lm_df.
+# Save the linear model to 'lin_model'.
+# What is the coefficient for pct_dependent? 
+# Does its t-value suggest that it is statistically significant?
+lin_model = lm(per_capita_meaneduc ~ pct_dependent, 
+               +                data = chicago_lm_df)
+lin_model
+
+
+# Again, subset per_capita_meaneduc, pct_16_unemployed, 
+# pct_25_wo_diploma, pct_dependent,
+# pct_house_crowded to a new dataframe called 'chicago_rev'.
+# Set seed as 2.
+chicago_rev <- cor_df[,c(1,3:6)]
+set.seed(2)
+
+# Use `caret` package's function `createDataPartition` to split `chicago_rev`
+# data into train and test subsets (i.e. 70% for training 30% for test).
+# Name training data as `chicago_train` and test data `chicago_test`.
+train_index = createDataPartition(chicago_rev$per_capita_meaneduc,
+                                  list = FALSE,
+                                  times = 1,
+                                  p = 0.7)
+
+chicago_train = chicago_rev[train_index, ]
+
+chicago_test = chicago_rev[-train_index, ]
+
+
+
+# Create a multiple linear regression model.
+# Let per_capita_meaneduc be the target variable and 
+# pct_16_unemployed, pct_25_wo_diploma, pct_dependent, 
+# pct_house_crowded be the predictor variables.
+# Use the `chicago_train` dataset.
+# Save the model to `mult_flt1` variable.
+# Which variable in the model is not statistically significant? 
+mult_flt1 = lm(per_capita_meaneduc ~ pct_16_unemployed + pct_25_wo_diploma + 
+               pct_dependent + pct_house_crowded, data = chicago_train) 
+mult_flt1
+summary(mult_flt1)
+
+
+# Which could we drop from the model?
+# Drop that variable from the model and re-run the model.
+# By how much is the adjusted R-squared improved for the new model?
+mult_flt1 = lm(per_capita_meaneduc ~ pct_16_unemployed + pct_25_wo_diploma + 
+                 pct_dependent, data = chicago_train) 
+                 
+                 
+# Does the new model meet the assumptions?
+# Plot to check the assumptions.
+# Submit the plot.
+par(mfrow=c(2,2))
+plot(mult_flt1)
+plot(mult_flt1, which = c(1))
+plot(mult_flt1,, which = c(2))
+plot(mult_flt1, which = c(3))
+plot(mult_flt1, which = c(4))
+
+
+# Load the 'chicago_census.csv' dataset and save it to `chicago` dataframe.
+# Rename the column names as the following:
+# c("community_number", "community_area", "pct_house_crowded", 
+# "pct_house_below_poverty", "pct_16_unemployed", 
+# "pct_25_wo_diploma", "pct_dependent", "per_capita_meaneduc", 
+# "hardship_index").
+# Inspect the structure of the `chicago` variable.
+
+
+chicago = read.csv("chicago_census.csv", header = TRUE, stringsAsFactors = FALSE)
+colnames(chicago) = c("community_number", "community_area", "pct_house_crowded",
+                      "pct_house_below_poverty", "pct_16_unemployed", "pct_25_wo_diploma",
+                      "pct_dependent", "per_capita_meaneduc", "hardship_index")
+
+str(chicago)
+
+
+
+# Set the seed equal to 2.
+set.seed(2)
+# Create a data partition index with a 70% split and name it "chicago_index".
+# Subset chicago_sub to include only chicago_index observations.
+# Name the training dataset "chicago_train".
+# Subset chicago_sub to include the rest of the chicago_index observations.
+# Name the test dataset "chicago_test".
+
+chicago_index = createDataPartition(chicago_sub$per_capita_meaneduc,
+                                    list = FALSE,
+                                    times = 1,
+                                    p = 0.7)
+
+# Use the `chicago_train` dataset to create a multiple linear regression model.
+# Let per_capita_meaneduc be the target variable and the
+# rest of the variables be the predictor variables.
+# Save the model to `mult_ln_1` variable.
+# Which variable in the model is the least statistically significant? 
+
+chicago_train = chicago_sub[chicago_index, ]
+chicago_test = chicago_sub[-chicago_index, ]
+mult_ln_model_1 = lm(per_capita_meaneduc ~ ., data=chicago_train)
+summary(mult_ln_model_1)
+
+
+
+# Check to see if mult_ln_1 meets the assumptions of LINE.
+# Does our model meet the assumptions?
+plot(mult_ln_model_1)
+#No
+
+
+
+# Identify the row numbers with influential observations. 
+# Name the list of row numbers "influential".
+# Then, remove the observations in influential from chicago_train.
+# Name the adjusted dataset chicago_train_cooks.
+# How many observations are influential to the model in chicago_train_cooks?
+
+influential = as.numeric(names(cooksd)[(cooksd > 4 * mean(cooksd, na.rm = T))]) 
+influential
+
+chicago_train_cooks = chicago_train[-influential, ]
+
+
+# We will create a categorical variable to replace per_capita_meaneduc. Complete the following:
+# Create a new variable per_capita_meaneduc that is "High" if per_capita_meaneduc is greater than 21000, 
+# and "Low" otherwise.
+# Convert this variable to a factor.
+chicago = chicago %>%
+  + mutate(per_capita_meaneduc = ifelse((per_capita_meaneduc)>21000, "High","Low"))
+chicago = chicago %>%
+  +      mutate(per_capita_meaneduc = as.factor(per_capita_meaneduc))
+  
+  
+  # Select all numerical variables without hardship_index and community_number.
+# And name this dataframe chicago_sub
+# Check the structure of chicago_sub
+# How many columns are in this dataframe?
+chicago_sub = chicago[,c(3:8)]
+str(chicago_sub)
+
+
+
+
+ Set seed = 2
+# Create a training dataset that contains 70% of the observations, 
+# and a test dataset that contains 30% of the observations using chicago_scaled.
+# Name these datasets chicago_train and chicago_test, respectively.
+# Finally, train the model on the training data using all the variables 
+# and per_capita_meaneduc as the outcome. 
+
+# Name the model chicago_KNN and set tuneLength equals 20,
+# Do not specify any cross validation methods.
+# Use the knn method. What value of k was used for the model?
+set.seed(2)
+chicago_indices = createDataPartition(chicago_scaled$per_capita_meaneduc,
+                  list = FALSE,
+                  times = 1,          
+                  p = 0.7)
+chicago_train = chicago_scaled[chicago_indices, ]
+chicago_test = chicago_scaled[-chicago_indices, ]
+
+chicago_KNN = train(per_capita_meaneduc ~., 
+                    data = chicago_train, 
+                    method = "knn",
+                    tuneLength = 20)
+chicago_KNN
+## The final value used for the model was k = 9.
+
+#================================================-
+#### Question 7 ####
+# Run chicago_KNN on the test data to make prediction and name the result as chicago_pred.
+# Create a confusion matrix for our predictions and test data.
+# How accurate were our predictions of per_capita_meaneduc?
+chicago_pred = predict(chicago_KNN, 
+                       newdata = chicago_test)
+confusionMatrix(chicago_pred, chicago_test$per_capita_meaneduc)
+## Accuracy : 0.9565
+
+#================================================-
+#### Question 8 ####
+# Set seed equals to 2.
+# Create a train control called ctrl with 3 repeats.
+# Run the knn model using this control on the chicago_train.
+# Name the model chicago_KNN_cv and view the result.
+# What's the final K value used for model?
+set.seed(2)
+ctrl = trainControl(method = "repeatedcv",  
+                    repeats = 3,         
+                    classProbs = TRUE)     
+chicago_KNN_cv = train(per_capita_meaneduc ~ ., 
+                       data = chicago_train, 
+                       method = "knn", 
+                       trControl = ctrl,
+                       tuneLength = 20)
+chicago_KNN_cv
+## The final value used for the model was k = 15
+
+#================================================-
+#### Question 9 ####
+# Predict the values using this new model.
+# Get the confusion matrix and check the accuracy.
+# How accurate were our predictions of per_capita_meaneduc?
+confusionMatrix(chicago_KNN_cv, newdata = chicago_test)
+## Accuracy (average) : 0.9273
+
+#================================================-
+#### Question 10 ####
+# Get k values and accuracy rate from chicago_KNN_cv
+# Create line plot showing k values and accuracy rate associate with it.
+# Let the X axis show k values and y axis display accuracy rate.
+# Save your plot in the 'Plots' pane by selecting Export - Save as image...
+# Save your plot as 'FirstName.LastName.Q10.PNG'.
+# Submit your plots via Moodle.
+# Ensure is named with the correct convention as described in the R script.
+chicago_KNN_cv
+plot(chicago_KNN_cv)
+View(chicago_KNN_cv)
+
+
+
+#### Assignment 17: Supervised learning - Part 7 ####
+
+#### Objectives ####
+# Supervised learning - Part 7 - day 1
+# Supervised learning - Part 7 - day 2
+
+#### Instructions ####
+# Make sure to read ALL parts of each question thoroughly. 
+# Submit all answers via the Google Forms link and all R code to the instructor.
+# ONLY YOUR FIRST TWO RESPONSES WILL BE SCORED. 
+# Any submission after the second or after the due date will not be counted.
+
+# Load the required packages
+
+# install.packages("MASS")
+library(MASS)
+# install.packages("pROC")
+library(pROC)
+# install.packages("klaR")
+library(klaR)
+library(caret)
+library(tidyverse)
+library(e1071)
+library(caret)
+library(ROCR)
+
+#### Dataset ####
+
+# Load the 'winequality.csv' dataset and save it to 'wine' dataframe.
+# Inspect the structure of the `wine` variable.
+setwd("~/Desktop/ucr/data")
+wine = read.csv('winequality.csv')
+str(wine)
+
+#================================================-
+#### Question 1 ####
+
+# We will create a categorical variable to replace 'quality'. 
+# Complete the following:
+# Create a new variable that have 3 classes based on quality
+# Cut quality into three buckets: 'low', 'medium', and 'high' using 0, 5, 6 and 10 as cutting points.
+# Then, assign this new variable to quality.
+
+wine$quality = cut(wine$quality, 
+                        breaks=c(0, 5,
+                                 6, 10), 
+                        labels=c("low", "medium", 
+                                 "high"))
+view(wine)
+
+# Check distribution of quality using table function. You will notice that our target
+# variable is unbalanced, but luckily we have enough data to sample from.
+
+table(wine$quality)
+
+# Use the following code to subset data based on quality level by randomly selecting 217 rows 
+# using sample function, and name data high, medium and low, then concatenate them together.
+# Do not forget to set seed to 2.
+
+set.seed(2)
+# REsample data
+high = wine[sample(which(wine$quality== "high" ) , 217 ) , ]
+medium = wine[sample( which(wine$quality== "medium" ) , 217 ) , ]
+low = wine[sample( which(wine$quality== "low" ) , 217 ) , ]
+# combine together
+wine = rbind(high, medium, low)
+
+# Create a training and test set for the wine_sub dataset, in which the training set 
+# contains 70% of the observations.
+# Check level name and make sure is correct.
+# Create LDA model using quality as target variable on training data.
+# What's the value of Proportion of trace for LD1?
+
+train_index = createDataPartition(wine$quality,  
+                                  list = FALSE,       
+                                  times = 1,          
+                                  p = 0.7)
+wine_train = wine[train_index, ]
+wine_test = wine[-train_index, ]
+
+levels(wine_train$quality) =
+  make.names(levels(factor(wine_train$quality)))
+
+levels(wine_test$quality) =
+  make.names(levels(factor(wine_test$quality)))
+
+lda_model = lda(quality ~., wine_train)
+lda_model
+
+#================================================-
+#### Question 2 ####
+
+# Make predictions by using LDA model on the test data.
+# Then, calculate ROC curve and confusion matrix.
+# Create a dataframe with 2 rows and 2 columns to store performance matrix.
+# What the value of the AUC?
+
+predicted_lda = predict(lda_model, wine_test)
+summary(predicted_lda)
+
+roc.lda = multiclass.roc(wine_test$quality, predicted_lda$posterior)
+roc.lda
+roc.lda$auc
+
+cm_lda = confusionMatrix(predicted_lda$class, wine_test$quality)
+cm_lda
+
+perf_metrics_df = data.frame(matrix(ncol = 2, nrow = 2))
+colnames(perf_metrics_df) = c("AUC", "Accuracy")
+rownames(perf_metrics_df) = c( "lda model", "qda model")
+
+perf_metrics_df[1, 1] = roc.lda$auc
+perf_metrics_df[1, 2] = cm_lda$overall["Accuracy"]
+perf_metrics_df
+
+#================================================-
+#### Question 3 ####
+
+# Train the QDA model on training data and make predictions on the test data.
+# Build a QDA model, then calculate ROC and Confusion matrix.
+# What is the value of the AUC?
+# Add the performance metrics to the dataframe you created in the previous question.
+
+qda_model = qda(quality ~., data = wine_train)
+qda_model
+
+predicted_qda = predict(qda_model, wine_test)
+summary(predicted_qda)
+
+roc.qda = multiclass.roc(wine_test$quality, predicted_qda$posterior)
+roc.qda
+roc.qda$auc
+
+cm_qda = confusionMatrix(predicted_qda$class, wine_test$quality)
+cm_qda
+
+perf_metrics_df[2,1] = roc.qda$auc
+perf_metrics_df[2,2] = cm_qda$overall['Accuracy']
+perf_metrics_df
+
+#================================================-
+#### Question 4 ####
+
+# Subset alcohol, density, and quality from the training and test datasets.
+# Note: SVM and SVC can work with multiple variables, but we are using two predictors
+# just for simplicity.
+# Train the SVC model with cost equal to 0.01 and probability equal to true.
+# Check the summary and plot SVC model.
+
+# Save your plot in the 'Plots' pane by selecting Export - Save as image...
+# Save your plot as 'FirstName.LastName. Q[question-number].PNG'. 
+# Submit your plots via Moodle.  
+
+wine_test = wine_test %>% select(alcohol, density, quality)
+wine_train = wine_train %>% select(alcohol, density, quality)
+
+
+svc_fit = svm(quality~.,
+              data = wine_train,
+              kernel = "linear",
+              cost = 0.01,
+              probability = TRUE)
+summary(svc_fit)
+
+
+
+plot(svc_fit, wine_train)
+
+
+#================================================-
+#### Question 5 ####
+
+# Make the predictions on test data.
+# Calcualte ROC curve and confusion matrix.
+# Hint: since we are predicting multiclass targets, use corresponding functions.
+# Create new dataframe with 2 columns, but 3 rows this time.
+# Assign performance of SVC to that dataframe.
+# What's the value of AUC?
+
+predicted_svc = predict(svc_fit,                 
+                        wine_test,                 
+                        decision.values = TRUE,   
+                        probability = TRUE)     
+
+
+roc.svc = multiclass.roc(wine_test$quality, attr(predicted_svc,"probabilities"))
+roc.svc
+roc.svc$auc
+
+
+
+#================================================-
+#### Question 6 ####
+# Set seed to 2.
+# Train the SVM model with gamma = 1, cost = 0.01.
+
+set.seed(2)
+
+svm_fit = svm(quality ~., data = wine_train, kernel = "radial",
+              cost = 0.01, gamma = 1, probability = TRUE)
+
+summary(svm_fit)
+
+# Save your plot in the 'Plots' pane by selecting Export - Save as image...
+# Save your plot as 'FirstName.LastName. Q[question-number].PNG'.
+# Submit your plots via Moodle.  
+
+plot(svm_fit, wine_train)
+
+
+#================================================-
+#### Question 7 ####
+# Make the predictions on the test data.
+# Calculate ROC curve and confusion matrix for the SVM model.
+# What's the value of AUC?
+
+predicted_svm = predict(svm_fit, wine_test, decision.values = TRUE, 
+                        probability = TRUE)
+
+
+roc.svm = multiclass.roc(wine_test$quality, attr(predicted_svm,"probabilities"))
+roc.svm
+roc.svm$auc
+
+
+#================================================-
+#### Question 8 ####
+# Tune model with cost range in (1, 10, 100) and gamma in (0.1, 0.5, 0.7, 1, 1.5).
+# View summary of this model.
+# What are the best parameters?
+
+svm_tune_fit = tune(svm, quality ~., data = wine_train,
+                    kernel = "radial", 
+                    ranges = list(cost = c(1, 10, 100),
+                                  gamma = c(0.1, 0.5, 0.7, 1, 1.5)),
+                    probability = TRUE)
+summary(svm_tune_fit)
+
+#================================================-
+#### Question 9 ####
+# Plot the best model.  
+# Save your plot in the 'Plots' pane by selecting Export - Save as image...
+# Save your plot as 'FirstName.LastName. Q[question-number].PNG'.
+# Submit your plots via Moodle.  
+
+plot(svm_tune_fit$best.model, wine_train)
+
+
+#================================================-
+#### Question 10 ####
+
+# Use best model to predict using the test data.
+# Calculate ROC and Accuracy then added into the dataframe.
+# Which model has highest accuracy?
+
+predicted_tuned_svm = predict(svm_tune_fit$best.model, wine_test,
+                              decision.values = TRUE, 
+                              probability = TRUE)
+
+roc.svm = multiclass.roc(wine_test$quality, attr(predicted_tuned_svm,"probabilities"))
+roc.svm
+roc.svm$auc
+
+
+perf_metrics_df[3,1] = perf_metrics_svm_tuned$overall[1]
+perf_metrics_df[3,2] = perf_metrics_svm_tuned[[8]]
+
+perf_metrics_df
+
+
+
+
+
+# We will create a categorical variable to replace per_capita_meaneduc. Complete the following:
+# Create a new variable per_capita_meaneduc that is "High" if per_capita_meaneduc is greater 
+# than its median, and "Low" otherwise.
+# Convert this variable to a factor.
+# Select all numerical variables except hardship_index, community_number and 
+# pct_16_umemployed.
+# And name this dataframe chicago_sub.
+
+chicago_sub = chicago %>%
+  mutate(per_capita_meaneduc = ifelse((per_capita_meaneduc) 
+                                      < median(chicago$per_capita_meaneduc), "Low","High")) %>%
+  mutate(per_capita_meaneduc = as.factor(per_capita_meaneduc)) %>%
+  dplyr::select(pct_house_below_poverty, pct_25_wo_diploma, 
+                pct_dependent, per_capita_meaneduc) #<- this ensures we use the select function from the dplyr package
+
+
+
+
+# Set your seed to set.seed(2).
+# Create a train and test set for the chicago_sub dataset, in which the training set 
+# contains 70% of the observations.
+# Using the glm() function, create a logistic regression model with the training data, 
+# predicting the classification of per_capital_meaneduc by all other variables.
+# Calculate the difference between the null deviance and residual deviance. 
+# Is there improvement by adding the predictors?
+
+set.seed(2)
+train_index = createDataPartition(chicago_sub$per_capita_meaneduc,  #<- outcome variable
+                                  list = FALSE,       #<- avoid returning the data as a list
+                                  times = 1,          #<- split 1 time 
+                                  p = 0.7)            #<- 70% training, 30% test
+
+# Subset the data to include only the training set observations.
+chicago_train = chicago_sub[train_index, ]
+
+# Subset the data to include only the test set observations.
+chicago_test = chicago_sub[-train_index, ]
+
+# Create the logistic regression model using glm.
+chicago_logist_reg = glm(per_capita_meaneduc ~ ., family = "binomial", 
+                     data = chicago_train)
+summary(chicago_logist_reg)
+
+# Calculate the difference between null and residual deviance.
+chicago_logist_reg$null.deviance - chicago_logist_reg$deviance
+
+# The difference is 62.39646, thus there is improvement by considering 
+# our predictors in the model.
+
+
+#================================================-
+#### Question 2 ####
+# Create a confusion matrix with a 0.5 cutoff.
+# What's the accuracy of our prediction? (round to 4 decimal places)
+# Create the confusion matrix.
+
+chicago_train$pred_class = factor(ifelse(chicago_logist_reg$fitted.values 
+                                         > 0.5, "Low", "High"))
+chi_conf_matrix = confusionMatrix(chicago_train$pred_class, 
+                                  chicago_train$per_capita_meaneduc)
+chi_conf_matrix
+# Our accuracy here is 0.9107, which means our model performs fairly well.
+
+#================================================-
+#### Question 3 ####
+# Create a plot of the ROC curve.
+# Save your plot in the 'Plots' pane by selecting Export - Save as image...
+# Save your plot as 'FirstName.LastName.Q3.PNG'.
+# Submit your plots via Moodle.
+# Make sure they are named with the correct convention 
+# as described in the R script. 
+
+ROCR_pred = prediction(chicago_logist_reg$fitted.values, 
+                       chicago_train$per_capita_meaneduc)
+
+# Build performance object for plotting TPR vs FPR.
+ROCR_perf = performance(ROCR_pred, 'tpr','fpr')
+plot(ROCR_perf, col = 'darkblue', lwd = 3)
+abline(a = 0, b = 1, col = "red", lwd = 3, lty = 2)
+ROCR_auc = performance(ROCR_pred,
+                       measure = "auc")
+ROCR_auc@y.values[[1]]
+
+
+#================================================-
+#### Question 4 ####
+# Calculate the area under the curve. 
+# What's the value of AUC? (round to 4 decimal places)
+# Compute area under the curve.
+
+ROCR_auc = performance(ROCR_pred,
+                       measure = "auc")
+ROCR_auc@y.values[[1]]
+## The area under the curce is  0.9885204.
+
+#================================================-
+#### Question 5 ####
+# Plot the accuracy of our model for various cutoff points using the performance function. 
+# Keep measure = "acc" in the performance function to plot it.
+# Save your plot in the 'Plots' pane by selecting Export - Save as image...
+# Save your plot as 'FirstName.LastName.Q5.PNG'.
+# Submit your plots via Moodle. Ensure they are named with the correct convention 
+# as described in the R script. 
+
+chi_acc = performance(ROCR_pred, measure = "acc")
+plot(chi_acc)
+
+#================================================-
+#### Question 6 ####
+# Using this information, calculate the optimal cutoff point as assign its value to best_cutoff.
+# What is the best cutoff point based on accuracy? (round to 4 decimal places)
+
+# Calculate the optimal cutoff point.
+max_ind = which.max(slot(chi_acc, "y.values")[[1]])
+best_accuracy = slot(chi_acc, "y.values")[[1]][max_ind]
+best_cutoff = slot(chi_acc, "x.values")[[1]][max_ind]
+print(c(accuracy= best_accuracy, cutoff = best_cutoff))
+
+# We realize an accuracy of 0.9464286 with a cutoff of 0.8071562.
+
+#================================================-
+#### Question 7 ####
+
+# Create prediction probabilities of per_capita_meaneduc on the test dataset.
+# Append these probabilities to the chicago_test dataframe as 'pred_probs'.
+chicago_test$pred_probs = predict(chicago_logist_reg, 
+                                  newdata = chicago_test, 
+                                  type = "response")
+
+# Convert these probabilities into a class "Low" or "High" using best_cuttoff
+# calculated in question 6, and append to the test dataframe as 'preds_class'.
+chicago_test$preds_class = factor(ifelse(chicago_test$pred_prob 
+                                         > best_cutoff , "Low", "High")) 
+head(chicago_test)
+
+# Create a confusion matrix of our predicted and actual values of the test data.
+# What's the accuracy of our prediction? (round to 4 decimal places)
+
+
+conf_matrix = confusionMatrix(chicago_test$preds_class, 
+                              chicago_test$per_capita_meaneduc)
+conf_matrix
+# We realize an accuracy of 0.9091, which means our model performs fairly well.
+
+#================================================-
+#### Question 8 ####
+# Build and Plot the ROC curve.
+
+
+# Get prediction probabilities using `prediction` from ROCR package.
+ROCR_preds = prediction(chicago_test$pred_probs, 
+                        chicago_test$per_capita_meaneduc)
+# Build performance object for plotting TPR vs FPR.
+ROCR_performance = performance(ROCR_preds, 'tpr', 'fpr')
+# Build ROC curve with random guess reference line.
+plot(ROCR_performance,  col = 'darkblue', lwd = 3)
+abline(a = 0, b = 1, col = "red", lwd = 3, lty = 2)
+
+# Save your plot in the 'Plots' pane by selecting Export - Save as image...
+# Save your plot as 'FirstName.LastName.Q8.PNG'.
+# Submit your plots via Moodle. Ensure they are named with the correct convention 
+# as described in the R script.
+
+
+
+#================================================-
+#### Question 9 ####
+# What is the AUC value? (round to 4 decimal places)
+ROCR_auc = performance(ROCR_preds,
+                       measure = "auc")
+ROCR_auc@y.values[[1]]
+# AUC is 0.9917355, meaning we have a really good model.
+
+#================================================-
+#### Question 10 ####
+# Assign variable chicago to a new variable as chicago2.
+# Similar to before, create a new variable per_capita_meaneduc that is "High" 
+# if per_capita_meaneduc is greater than its median, and "Low" otherwise.
+# Convert this variable to a factor.
+# Do NOT split into a train and test set.
+chicago2 = chicago %>%
+  +     mutate(per_capita_meaneduc = ifelse((per_capita_meaneduc)> median(chicago$per_capita_meaneduc), "High","Low")) %>%
+  +     mutate(per_capita_meaneduc = as.factor(per_capita_meaneduc))
+
+
+# Now, create a logistic regression with chicago2. Does it converge?
+# Analyze the results using the summary function.
+
+chicago2_logist_reg = glm(per_capita_meaneduc ~ ., 
+                          family = "binomial", data = chicago2)
+summary(chicago2_logist_reg)
+
+model_coeff = coef(chicago2_logist_reg)
+odds = exp(model_coeff)
+odds
+odds[odds > 1.5]
+chicago2_logist_reg$null.deviance
+##106.7317
+chicago2_logist_reg$deviance
+##4.467218e-10
+chicago2_logist_reg$null.deviance - chicago2_logist_reg$deviance
+##106.7317
+##The fact that this difference is not much larger than our residual deviance means that iyr logistic regression does not converge.
+
+
+
+
+#### Assignment 18: Supervised learning - Part 8 ####
+
+#### Objectives ####
+# Supervised learning - Part 8 - day 1
+# Supervised learning - Part 8 - day 2
+
+#### Instructions ####
+# Make sure to read ALL parts of each question thoroughly. 
+# Submit all answers via the Google Forms link and all R code to the instructor.
+# ONLY YOUR FIRST TWO RESPONSES WILL BE SCORED. 
+# Any submission after the second or after the due date will not be counted.
+
+# Load the required packages.
+
+library(tidyverse)
+library(caret)
+# install.packages("neuralnet")
+library(neuralnet)
+# install.packages("keras")
+library(keras)
+#install.packages("tensorflow")
+library(tensorflow)
+
+
+#### Dataset ####
+
+# Load the 'winequality.csv' dataset and save it to 'wine' dataframe.
+# Inspect the structure of the wine dataset.
+setwd("~/Desktop/ucr/data")
+wine = read.csv('winequality.csv')
+str(wine)
+
+#================================================-
+#### Question 1 ####
+# Scale data using its min and max.
+max = apply(wine , 2, max)
+min = apply(wine, 2, min)
+view(max)
+view(min)
+wine_scaled = as.data.frame(scale(wine, center = min, scale = max - min))
+
+# Set your seed to 2.
+set.seed(2)
+
+# Create a train and test set for the wine_scaled dataset, in which the training set 
+# contains 70% of the observations.
+train_index = createDataPartition(wine_scaled$quality,  
+                                  list = FALSE,       
+                                  times = 1,          
+                                  p = 0.7)
+
+wine_train = wine_scaled[train_index, ]
+wine_test = wine_scaled[-train_index, ]
+
+# Train a neural network model using quality as target variable and rest as predictors.
+# Name the model wine_ANN, then plot the model.
+wine_ANN = neuralnet(quality ~ ., data = wine_train)
+plot(wine_ANN, rep = "best")
+
+# Save your plot in the 'Plots' pane by selecting Export - Save as image...
+# Save your plot as 'FirstName.LastName. Q[question-number].PNG'
+# Submit your plots via Moodle.  
+
+
+
+#================================================-
+#### Question 2 ####
+# Predict quality using wine_ANN we just trained.
+# Then, use get_metrics function to get all performance metrics.
+# Create dataframe with 3 rows and 4 columns to store data.
+# What is the value of RMSE for ANN model?
+
+get_metrics <- function(observed_y, actual_y, n_pred){
+  
+  n = length(observed_y)
+  actual_mean = mean(actual_y)
+  
+  # Mean absolute error
+  mae = (1/n) * (sum(abs(actual_y - observed_y)))
+  
+  # RMSE
+  rmse = sqrt((1/n) * (sum((actual_y - observed_y)^2)))
+  
+  # R-squared
+  ssr = sum((observed_y - actual_mean)^2)
+  sst = sum((actual_y - actual_mean)^2)
+  sse = sum((actual_y - observed_y)^2)
+  
+  rsq = 1 - (sse/sst)
+  
+  # Adjusted R-squared
+  
+  adj_rsq = 1 - (((n-1)/(n-n_pred)) * (sse/sst))
+  
+  metrics_vector = c(mae,rmse,rsq, adj_rsq)
+  return(metrics_vector)
+  
+}
+
+x_test = wine_test %>% select(-quality) 
+y_test = wine_test$quality
+
+y_pred = predict(wine_ANN, x_test)
+
+multi_metrics = get_metrics(y_pred, y_test, 5)
+
+perf_metrics_df = data.frame(matrix(ncol = 4, nrow = 3))
+x = c("mae", "rmse", "r-squared", "adjusted-r-squared")
+colnames(perf_metrics_df) = x
+
+perf_metrics_df[1, ] = multi_metrics
+perf_metrics_df
+
+#================================================-
+#### Question 3 ####
+# Set seed to 2
+set.seed(2)
+
+# Tune wine_ANN model with 2 hidden layers, which have 4 and 2 neurons respectively.
+# Name this model tuned_wine_ANN and plot the model.
+tuned_wine_ANN = neuralnet(quality ~ ., data = wine_train,
+                           hidden = c(4, 2), act.fct = "logistic")
+plot(tuned_wine_ANN, rep = "best")
+
+# Save your plot in the 'Plots' pane by selecting Export - Save as image...
+# Save your plot as 'FirstName.LastName. Q[question-number].PNG'
+# Submit your plots via Moodle.  
+
+
+
+#================================================-
+#### Question 4 ####
+# Use tuned_wine_ANN to predict on the test data.
+# Get all performance metrics using get_metrics function
+# and add to the dataframe.
+# What is the value of the RMSE for tuned ANN model?
+y_pred = predict(tuned_wine_ANN, x_test)
+multi_metrics = get_metrics(y_pred, y_test, 5)
+perf_metrics_df[2, ] = multi_metrics
+perf_metrics_df
+
+
+
+#================================================-
+#### Question 5 ####
+# Separate training and test data with X and y variables.
+# Then, transform them into matrices.
+X_train = as.matrix(wine_train%>% select(-quality))
+
+y_train = as.matrix(wine_train$quality)
+
+X_test = as.matrix(wine_test%>% select(-quality))
+
+y_test = as.matrix(wine_test$quality) 
+
+# Start a sequential model in Keras.
+# Build a neural network model with one hidden layer that has 8 neurons.
+# Use relu as the activation function, randomnormal as the kernel initializer,
+# and check the summary of the model.
+# How many parameters are included in this model?
+keras_model_sequential
+model = keras_model_sequential()
+
+# Define neural network model with 2 hidden layers.
+model %>% 
+  layer_dense(units = 8, activation = 'relu',  kernel_initializer='RandomNormal',input_shape = ncol(X_train)) %>% 
+  layer_dense(units = 1, activation = 'linear') 
+
+
+
+#================================================-
+#### Question 6 ####
+# Compile the model using mse as the loss function, adam as the optimizer,
+# and mae as metrics.
+model %>% compile(
+  loss = 'mean_squared_error',
+  optimizer = 'adam',          
+  metrics = c('mae')           
+)
+
+# Fit the model with data using 50 epochs, 20 as batch size,
+# and 20% of data as validation data.
+# Between the performance of training and validations, which one has higher MAE?
+history <- model %>% fit(
+  X_train, y_train,               
+  epochs = 50, batch_size = 20,  
+  validation_split = 0.2          
+)
+print(history)
+
+#================================================-
+#### Question 7 ####
+# Plot the model.
+# Save your plot in the 'Plots' pane by selecting Export - Save as image...
+# Save your plot as 'FirstName.LastName. Q[question-number].PNG'
+# Submit your plots via Moodle.  
+plot(history)
+
+
+#================================================-
+#### Question 8 ####
+# Make predictions using the model we just created in Keras on the test data.
+# Use the get_metrics function to get all performance metrics.
+# Add the results to the dataframe.
+# Which model performs the best?
+pred <- predict(object = model, x = as.matrix(X_test)) %>% as.vector()
+
+model %>% evaluate(X_test, y_test)
+n = length(y_test)
+actual_mean = mean(y_test)
+
+baseline_RMSE = sqrt((1/n) * (sum((actual_mean - y_test)^2)))
+baseline_RMSE
+model_RMSE = sqrt((1/n) * (sum((pred - y_test)^2)))
+model_RMSE
+
+#================================================-
+#### Question 9 ####
+# Suppose you are predicting the facial emotion of a person, and 
+# the input given to you is images of different people with different 
+# emotions. Which model would be most suitable for this problem?
+###CNN
+
+
+#================================================-
+#### Question 10 ####
+# Suppose you are composing a song based on popular hits in 70s.
+# Which model would be most suitable for this problem?
+###RNN
+
+
+
+
